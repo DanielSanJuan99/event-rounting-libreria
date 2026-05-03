@@ -1,0 +1,9 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "",
+    "FUNCTIONS_WORKER_RUNTIME": "java",
+    "EVENT_GRID_TOPIC_ENDPOINT": "https://<tu-topic>.<region>-1.eventgrid.azure.net/api/events",
+    "EVENT_GRID_TOPIC_KEY": "<REEMPLAZAR_EVENT_GRID_TOPIC_KEY>"
+  }
+}

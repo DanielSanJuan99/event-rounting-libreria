@@ -1,0 +1,17 @@
+.vscode
+
+target/
+
+local.settings.json
+
+.DS_Store
+
+.env
+
+.classpath
+
+.project
+
+*.jar
+
+*.log
