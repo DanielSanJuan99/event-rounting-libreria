@@ -137,7 +137,7 @@ En este proyecto hay **una Subscription** apuntando al consumer `notificacionCon
 | **Name** | `notificacion-subscription` |
 | **Endpoint Type** | Azure Function |
 | **Endpoint** | `functionsbiblioteca` → `notificacionConsumer` |
-| **Filters (opcional)** | Event Types: `Prestamo.Creado`, `Prestamo.Devuelto`, `Usuario.Inactivado` |
+| **Filters (opcional)** | Event Types: `Prestamo.Creado`, `Prestamo.Devuelto`, `Usuario.Inactivo` |
 
 Sin esta Subscription, los eventos publicados se descartan silenciosamente — el Topic los recibe pero no tiene a quién entregárselos.
 
@@ -267,13 +267,13 @@ curl -X POST {BASE}/eventPublisher \
   }'
 ```
 
-### Publicar `Usuario.Inactivado`
+### Publicar `Usuario.Inactivo`
 
 ```bash
 curl -X POST {BASE}/eventPublisher \
   -H "Content-Type: application/json" \
   -d '{
-    "eventType": "Usuario.Inactivado",
+    "eventType": "Usuario.Inactivo",
     "subject": "biblioteca/usuarios/5",
     "data": {
       "id": "5",
