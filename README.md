@@ -130,16 +130,15 @@ Cada evento publicado tiene la estructura estándar de Event Grid:
 
 Una **Subscription** define qué consumer debe ser invocado cuando llega un evento al Topic. Un mismo Topic puede tener **múltiples Subscriptions** apuntando a distintos endpoints (Azure Functions, Webhooks, Service Bus, Storage Queues, etc.).
 
-En este proyecto hay **una Subscription** apuntando al consumer `notificacionConsumer` del Function App `functionsbiblioteca`:
+En este proyecto hay **tres Subscriptions** apuntando a distintos consumers del Function App `functionsbiblioteca` (fan-out):
 
-| Atributo | Valor |
-|---|---|
-| **Name** | `notificacion-subscription` |
-| **Endpoint Type** | Azure Function |
-| **Endpoint** | `functionsbiblioteca` → `notificacionConsumer` |
-| **Filters (opcional)** | Event Types: `Prestamo.Creado`, `Prestamo.Devuelto`, `Usuario.Inactivo` |
+| Name | Endpoint | Filtros (Event Types) |
+|---|---|---|
+| `duoc-subscripcion-cn2-libreria` | `functionsbiblioteca` → `notificacionConsumer` | `Prestamo.Creado`, `Prestamo.Devuelto`, `Usuario.EliminacionSolicitada` |
+| `sub-prestamos-stock` | `functionsbiblioteca` → `prestamosStockConsumer` | `Prestamo.Creado`, `Prestamo.Devuelto` |
+| `sub-usuario-eliminado` | `functionsbiblioteca` → `usuarioEliminadoConsumer` | `Usuario.EliminacionSolicitada` |
 
-Sin esta Subscription, los eventos publicados se descartan silenciosamente — el Topic los recibe pero no tiene a quién entregárselos.
+Sin estas Subscriptions, los eventos publicados se descartan silenciosamente — el Topic los recibe pero no tiene a quién entregárselos.
 
 ### 🔄 Patrón Pub/Sub
 
@@ -147,12 +146,10 @@ Sin esta Subscription, los eventos publicados se descartan silenciosamente — e
 [Publisher: eventPublisher]
         ↓ sendEvent()
    [Topic: biblioteca-topics]
-        ↓ filtra por eventType (opcional)
-   [Subscription: notificacion-subscription]
-        ↓ invoca async
-[Consumer: notificacionConsumer (@EventGridTrigger)]
-        ↓ persiste
-   [Tabla NOTIFICACIONES]
+        ↓ fan-out (filtrado por Event Types en cada Subscription)
+        ├─→ duoc-subscripcion-cn2-libreria → notificacionConsumer       → tabla NOTIFICACION
+        ├─→ sub-prestamos-stock           → prestamosStockConsumer     → ajusta COPIAS_DISPONIBLE en LIBRO
+        └─→ sub-usuario-eliminado         → usuarioEliminadoConsumer   → cascada (LIBRO + PRESTAMO + USUARIO + NOTIFICACION)
 ```
 
 **Ventajas del modelo:**
@@ -267,17 +264,27 @@ curl -X POST {BASE}/eventPublisher \
   }'
 ```
 
-### Publicar `Usuario.Inactivo`
+### Publicar `Usuario.EliminacionSolicitada`
 
 ```bash
 curl -X POST {BASE}/eventPublisher \
   -H "Content-Type: application/json" \
   -d '{
-    "eventType": "Usuario.Inactivo",
+    "eventType": "Usuario.EliminacionSolicitada",
     "subject": "biblioteca/usuarios/5",
     "data": {
-      "id": "5",
-      "prestamosActivos": 2
+      "idUsuario": "5",
+      "usuario": {
+        "id": "5",
+        "nombre": "Carlos",
+        "apellidoPaterno": "Pérez",
+        "apellidoMaterno": "García",
+        "email": "carlos.perez@correo.cl"
+      },
+      "prestamos": [
+        { "id": "10", "idLibro": "5", "estado": "PRESTADO" }
+      ],
+      "totalPrestamos": 1
     }
   }'
 ```
